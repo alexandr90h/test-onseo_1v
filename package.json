@@ -1,0 +1,25 @@
+{
+    "name": "pixijs-typescript-onseo",
+    "version": "0.0.1",
+    "description": "test",
+    "scripts": {
+        "dev": "webpack-dev-server -d"
+    },
+    "author": "Alexandr <alexandr90h@gmail.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "clean-webpack-plugin": "^3.0.0",
+        "copy-webpack-plugin": "5.1.1",
+        "html-webpack-plugin": "4.0.4",
+        "prettier": "2.0.4",
+        "ts-loader": "6.2.2",
+        "typescript": "3.8.3",
+        "webpack": "4.42.1",
+        "webpack-cli": "3.3.11",
+        "webpack-dev-server": "^3.10.3"
+    },
+    "dependencies": {
+        "@tweenjs/tween.js": "^18.6.4",
+        "pixi.js": "5.2.1"
+    }
+}
