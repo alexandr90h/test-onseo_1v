@@ -1,0 +1,30 @@
+[
+    {
+        "id": 1,
+        "name": "dock1",
+        "filled": false,
+        "berthCoordinates": { "x": 30, "y": 105 },
+        "isBusy": false
+    },
+    {
+        "id": 2,
+        "name": "dock2",
+        "filled": false,
+        "berthCoordinates": { "x": 30, "y": 225 },
+        "isBusy": false
+    },
+    {
+        "id": 3,
+        "name": "dock3",
+        "filled": false,
+        "berthCoordinates": { "x": 30, "y": 345 },
+        "isBusy": false
+    },
+    {
+        "id": 4,
+        "name": "dock4",
+        "filled": false,
+        "berthCoordinates": { "x": 30, "y": 465 },
+        "isBusy": false
+    }
+]
