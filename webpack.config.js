@@ -29,6 +29,7 @@ module.exports = {
         // This line is VERY important for VS Code debugging to attach properly
         // Tamper with it at your own risks
         devtoolModuleFilenameTemplate: '[absolute-resource-path]',
+        publicPath: "/test-onseo_1v/",
     },
     plugins: [
         // No need to write a index.html
