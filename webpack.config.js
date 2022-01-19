@@ -33,7 +33,7 @@ module.exports = {
     },
     plugins: [
         // No need to write a index.html
-        new HtmlWebpackPlugin(),
+        new HtmlWebpackPlugin({ template: 'src/index.html' }),
         // Do not accumulate files in ./dist
         new CleanWebpackPlugin(),
         // Copy assets to serve them
@@ -44,7 +44,7 @@ module.exports = {
         contentBase: path.join(__dirname, 'dist'),
         // keep port in sync with VS Code launch.json
         port: 3000,
-        // Hot-reloading, the sole reason to use webpack here <3
+        open: true,
         hot: true,
         writeToDisk: true,
     },

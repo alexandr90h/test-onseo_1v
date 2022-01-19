@@ -75,37 +75,43 @@ function getDock(filled: boolean) {
 let app = new PIXI.Application({ width: 800, height: 600, backgroundColor: 0x3a56f2 });
 document.body.appendChild(app.view)
 
-const dock1 = new PIXI.Graphics()
-dock1.lineStyle(5, 0xe3e344, 1)
-dock1.beginFill(docksState.find(e => e.id === 1)?.filled ? 0xe3e344 : 0x3a56f2)
-dock1.drawRect(3, 2, 25, 100)
-dock1.y = 70
-dock1.endFill()
+const dock1 = new PIXI.Sprite()
+const dock2 = new PIXI.Sprite()
+const dock3 = new PIXI.Sprite()
+const dock4 = new PIXI.Sprite()
 app.stage.addChild(dock1)
-
-const dock2 = new PIXI.Graphics()
-dock2.lineStyle(5, 0xe3e344, 1)
-dock2.beginFill(docksState.find(e => e.id === 2)?.filled ? 0xe3e344 : 0x3a56f2)
-dock2.drawRect(3, 2, 25, 100)
-dock2.y = 190
-dock2.endFill()
 app.stage.addChild(dock2)
-
-const dock3 = new PIXI.Graphics()
-dock3.lineStyle(5, 0xe3e344, 1)
-dock3.beginFill(docksState.find(e => e.id === 3)?.filled ? 0xe3e344 : 0x3a56f2)
-dock3.drawRect(3, 2, 25, 100)
-dock3.y = 310
-dock3.endFill()
 app.stage.addChild(dock3)
-
-const dock4 = new PIXI.Graphics()
-dock4.lineStyle(5, 0xe3e344, 1)
-dock4.beginFill(docksState.find(e => e.id === 4)?.filled ? 0xe3e344 : 0x3a56f2)
-dock4.drawRect(3, 2, 25, 100)
-dock4.y = 430
-dock4.endFill()
 app.stage.addChild(dock4)
+
+docksState.forEach((dock, idx) => {
+    const dockEmpty = new PIXI.Graphics()
+    const dockFull = new PIXI.Graphics()
+    dockEmpty.lineStyle(5, 0xe3e344, 1).beginFill(0x3a56f2).drawRect(3, 2, 25, 100).endFill()
+    dockFull.lineStyle(5, 0xe3e344, 1).beginFill(0xe3e344).drawRect(3, 2, 25, 100).endFill()
+    dockFull.alpha = 0
+    if (idx === 0) {
+        dock1.y = 70
+        dock1.addChild(dockEmpty)
+        dock1.addChild(dockFull)
+    } if (idx === 1) {
+        dock2.y = 190
+        dock2.addChild(dockEmpty)
+        dock2.addChild(dockFull)
+    }
+    if (idx === 2) {
+        dock3.y = 310
+        dock3.addChild(dockEmpty)
+        dock3.addChild(dockFull)
+    }
+    if (idx === 3) {
+        dock4.y = 430
+        dock4.addChild(dockEmpty)
+        dock4.addChild(dockFull)
+    }
+
+})
+
 
 const wall_1 = new PIXI.Graphics()
 wall_1.lineStyle(0, 0xe3e344, 1)
@@ -121,6 +127,10 @@ wall_2.drawRect(200, 400, 10, 200)
 wall_2.endFill()
 app.stage.addChild(wall_2)
 
+
+function overloadDock(dockObj: PIXI.Sprite, filled: boolean) {
+    filled ? dockObj.children[1].alpha = 1 : dockObj.children[1].alpha = 0
+}
 function onShipWithLine(ship: PIXI.Container, dock: Dock, shipFilled: boolean, red: PIXI.Sprite, green: PIXI.Sprite) {
     const coordsC = { x: 220, y: shipFilled ? 220 : 350 }
     const tweenC = new TWEEN.Tween(coordsC)
@@ -131,7 +141,7 @@ function onShipWithLine(ship: PIXI.Container, dock: Dock, shipFilled: boolean, r
         .onComplete(() => {
             console.log('onComplete');
             // dockCoord = docks[dock.id - 1].berthCoordinates
-            shipFilled ? overload(red, shipFilled) : overload(green, shipFilled)
+            shipFilled ? overloadShip(red, shipFilled) : overloadShip(green, shipFilled)
             tweenD.delay(5000)
             setTimeout(() => {
                 if (shipFilled) {
@@ -144,16 +154,16 @@ function onShipWithLine(ship: PIXI.Container, dock: Dock, shipFilled: boolean, r
                 }
                 switch (dock.id) {
                     case 1:
-                        shipFilled ? dock1.tint = 0xe3e344 : dock1.tint = 0xffffff
+                        overloadDock(dock1, shipFilled)
                         break;
                     case 2:
-                        shipFilled ? dock2.tint = 0xe3e344 : dock2.tint = 0xffffff
+                        overloadDock(dock2, shipFilled)
                         break;
                     case 3:
-                        shipFilled ? dock3.tint = 0xe3e344 : dock3.tint = 0xffffff
+                        overloadDock(dock3, shipFilled)
                         break;
                     case 4:
-                        shipFilled ? dock4.tint = 0xe3e344 : dock4.tint = 0xffffff
+                        overloadDock(dock4, shipFilled)
                         break;
                     default:
                         break;
@@ -197,7 +207,7 @@ declare global {
         api?: any;
     }
 }
-function overload(params: PIXI.Sprite, filled: boolean) {
+function overloadShip(params: PIXI.Sprite, filled: boolean) {
     const size = { s: filled ? 60 : 0 }
     const tween = new TWEEN.Tween(size) // Create a new tween that modifies 'coords'.
         .to({ s: filled ? 0 : 60 }, 5000) // Move to (300, 200) in 1 second.
@@ -216,16 +226,16 @@ function createStartShip() {
     const shipElement = new PIXI.Container();
     shipElement.position = new PIXI.Point(810, 300);
     app.stage.addChild(shipElement);
-    const empty_Green = PIXI.Sprite.from('../assets/images/green-ship-empty.png');
+    const empty_Green = PIXI.Sprite.from('assets/images/green-ship-empty.png');
     empty_Green.width = 60;
     empty_Green.height = 30;
-    const full_Green = PIXI.Sprite.from('../assets/images/green-ship-full.png');
+    const full_Green = PIXI.Sprite.from('assets/images/green-ship-full.png');
     full_Green.width = 0;
     full_Green.height = 30;
-    const empty_Red = PIXI.Sprite.from('../assets/images/red-ship-empty.png');
+    const empty_Red = PIXI.Sprite.from('assets/images/red-ship-empty.png');
     empty_Red.width = 60;
     empty_Red.height = 30;
-    const full_Red = PIXI.Sprite.from('../assets/images/red-ship-full.png');
+    const full_Red = PIXI.Sprite.from('assets/images/red-ship-full.png');
     full_Red.width = 60;
     full_Red.height = 30;
     if (filled) {
@@ -268,7 +278,7 @@ function createStartShip() {
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
                 // console.log('onComplete');
-                filled ? overload(full_Red, filled) : overload(full_Green, filled)
+                filled ? overloadShip(full_Red, filled) : overloadShip(full_Green, filled)
                 tweenC.delay(5000)
                 setTimeout(() => {
                     if (filled) {
@@ -279,16 +289,16 @@ function createStartShip() {
                     }
                     switch (dock.id) {
                         case 1:
-                            filled ? dock1.tint = 0xe3e344 : dock1.tint = 0xffffff
+                            overloadDock(dock1, filled)
                             break;
                         case 2:
-                            filled ? dock2.tint = 0xe3e344 : dock2.tint = 0xffffff
+                            overloadDock(dock2, filled)
                             break;
                         case 3:
-                            filled ? dock3.tint = 0xe3e344 : dock3.tint = 0xffffff
+                            overloadDock(dock3, filled)
                             break;
                         case 4:
-                            filled ? dock4.tint = 0xe3e344 : dock4.tint = 0xffffff
+                            overloadDock(dock4, filled)
                             break;
                         default:
                             break;

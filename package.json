@@ -4,6 +4,7 @@
     "description": "test",
     "scripts": {
         "dev": "webpack-dev-server -d",
+        "build": "webpack --mode-production",
         "deploy": "gh-pages -d dist"
     },
     "author": "Alexandr <alexandr90h@gmail.com>",
