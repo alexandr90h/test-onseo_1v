@@ -9,6 +9,7 @@ interface Ships {
     waiting: boolean;
     numberInLine: number;
     shipContainer: PIXI.Container;
+    stoped: boolean;
 }
 interface Dock {
     id: number;
@@ -49,6 +50,7 @@ let docksState: Dock[] = [
     }
 ]
 let shipsState: Ships[] = []
+let passageIsBusy: boolean = false
 
 function getDock(filled: boolean) {
     const dock = docksState.filter(e => !e.isBusy)
@@ -62,15 +64,15 @@ function getDock(filled: boolean) {
         return undefined
     }
 }
-// function testForAABB(object1: PIXI.Graphics, object2: PIXI.Graphics) {
-//     const bounds1 = object1.getBounds();
-//     const bounds2 = object2.getBounds();
+function testForAABB(object1: PIXI.Graphics, object2: PIXI.Container) {
+    const bounds1 = object1.getBounds();
+    const bounds2 = object2.getBounds();
 
-//     return bounds1.x < bounds2.x + bounds2.width + 1
-//         && bounds1.x + bounds1.width + 1 > bounds2.x
-//         && bounds1.y < bounds2.y + bounds2.height
-//         && bounds1.y + bounds1.height > bounds2.y;
-// }
+    return bounds1.x < bounds2.x + bounds2.width + 1
+        && bounds1.x + bounds1.width + 1 > bounds2.x
+        && bounds1.y < bounds2.y + bounds2.height
+        && bounds1.y + bounds1.height > bounds2.y;
+}
 
 let app = new PIXI.Application({ width: 800, height: 600, backgroundColor: 0x3a56f2 });
 document.body.appendChild(app.view)
@@ -127,6 +129,9 @@ wall_2.drawRect(200, 400, 10, 200)
 wall_2.endFill()
 app.stage.addChild(wall_2)
 
+const passage = new PIXI.Graphics
+passage.lineStyle(0, 0xf003fc, 1).beginFill(0xf003fc).drawRect(200, 200, 10, 200).endFill().alpha = 0
+app.stage.addChild(passage)
 
 function overloadDock(dockObj: PIXI.Sprite, filled: boolean) {
     filled ? dockObj.children[1].alpha = 1 : dockObj.children[1].alpha = 0
@@ -134,15 +139,15 @@ function overloadDock(dockObj: PIXI.Sprite, filled: boolean) {
 function onShipWithLine(ship: PIXI.Container, dock: Dock, shipFilled: boolean, red: PIXI.Sprite, green: PIXI.Sprite) {
     const coordsC = { x: 220, y: shipFilled ? 220 : 350 }
     const tweenC = new TWEEN.Tween(coordsC)
-        .to({ x: 30, y: dock.id * 105 + ((dock.id - 1) * 15) }, 4000)
+        .to({ x: 30, y: dock.id * 105 + ((dock.id - 1) * 15) }, 2000)
         .onUpdate(() => {
             ship.x = coordsC.x, ship.y = coordsC.y
         })
         .onComplete(() => {
-            console.log('onComplete');
+            // console.log('onComplete');
             // dockCoord = docks[dock.id - 1].berthCoordinates
             shipFilled ? overloadShip(red, shipFilled) : overloadShip(green, shipFilled)
-            tweenD.delay(5000)
+            tweenD.delay(1000)
             setTimeout(() => {
                 if (shipFilled) {
                     docksState.forEach(e => { if (e.id === dock.id) { e.filled = true; e.isBusy = false } })
@@ -168,7 +173,7 @@ function onShipWithLine(ship: PIXI.Container, dock: Dock, shipFilled: boolean, r
                     default:
                         break;
                 }
-            }, 5000);
+            }, 1000);
         })
     const coordsD = { x: 30, y: dock.id * 105 + ((dock.id - 1) * 15) }
     const tweenD = new TWEEN.Tween(coordsD)
@@ -181,6 +186,8 @@ function onShipWithLine(ship: PIXI.Container, dock: Dock, shipFilled: boolean, r
         .to({ x: 810, y: 295 }, 4000)
         .onUpdate(() => {
             ship.x = coordsE.x, ship.y = coordsE.y
+        }).onComplete(() => {
+            ship.destroy()
         })
 
     // tweenB.chain(tweenC)
@@ -190,14 +197,14 @@ function onShipWithLine(ship: PIXI.Container, dock: Dock, shipFilled: boolean, r
 
 }
 
-function changePlaceInLine(ship: PIXI.Container, shipObj: Ships) {
+function changePlaceInLine(ship: PIXI.Container, shipObj: Ships, delay: number) {
     shipsState.forEach(e => { if (e.id === shipObj.id) { e.numberInLine = shipObj.numberInLine - 1 } })
     const coordsA = { x: shipObj.numberInLine * 80 + 220 }
     const tweenA = new TWEEN.Tween(coordsA)
         .to({ x: (shipObj.numberInLine * 80 + 220) - 80 }, 1000)
         .onUpdate(() => {
             ship.x = coordsA.x
-        }).delay(1000).onComplete(() => {
+        }).delay(delay).onComplete(() => {
         })
     tweenA.start()
 }
@@ -210,7 +217,7 @@ declare global {
 function overloadShip(params: PIXI.Sprite, filled: boolean) {
     const size = { s: filled ? 60 : 0 }
     const tween = new TWEEN.Tween(size) // Create a new tween that modifies 'coords'.
-        .to({ s: filled ? 0 : 60 }, 5000) // Move to (300, 200) in 1 second.
+        .to({ s: filled ? 0 : 60 }, 1000) // Move to (300, 200) in 1 second.
         .onUpdate(() => {
             params.width = size.s
         })
@@ -253,33 +260,40 @@ function createStartShip() {
         color: filled ? 'red' : 'green',
         waiting: !dock,
         numberInLine: !!dock ? 0 : shipsState.filter(ship => ship.waiting == true && ship.filled === filled).length + 1,
-        shipContainer: shipElement
+        shipContainer: shipElement,
+        stoped: false
     }
     // console.table(currentShip)
     shipsState.push(currentShip)
-    // console.log('getInLine(filled):', getInLine(filled));
-    // console.log('shipsState-waiting:', shipsState.filter(ship => ship.waiting).length);
-    // console.log(!!dock);
+
+    // app.ticker.add((delta) => {
+    //     if (testForAABB(passage, shipElement)) {
+    //         passage.tint = 0x000000
+    //     } else passage.tint = 0xffffff
+    // })
 
     if (!!dock) {
-        const coordsA = { x: 810, y: 260 } // Start at (0, 0)
-        const tweenA = new TWEEN.Tween(coordsA) // Create a new tween that modifies 'coords'.
-            .to({ x: 210, y: 260 }, 6000) // Move to (300, 200) in 1 second.
+        const coordsA = { x: 810, y: 260 }
+        const tweenA = new TWEEN.Tween(coordsA)
+            .to({ x: 210, y: 260 }, 5000)
             // .easing(TWEEN.Easing.Quadratic.Out)
             .onUpdate(() => {
                 shipElement.x = coordsA.x, shipElement.y = coordsA.y
             })
         const coordsB = { x: 210, y: 260 }
-        const tweenB = new TWEEN.Tween(coordsB) // Create a new tween that modifies 'coords'.
-            .to({ x: 30, y: dock.id * 105 + ((dock.id - 1) * 15) }, 4000) // Move to (300, 200) in 1 second.
+        const tweenB = new TWEEN.Tween(coordsB)
+            .to({ x: 30, y: dock.id * 105 + ((dock.id - 1) * 15) }, 2000)
             .onUpdate(() => {
+                if (testForAABB(passage, shipElement)) {
+                    passageIsBusy = true
+                } else { passageIsBusy = false }
                 shipElement.x = coordsB.x, shipElement.y = coordsB.y
             })
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
                 // console.log('onComplete');
                 filled ? overloadShip(full_Red, filled) : overloadShip(full_Green, filled)
-                tweenC.delay(5000)
+                tweenC.delay(1000)
                 setTimeout(() => {
                     if (filled) {
                         docksState.forEach(e => { if (e.id === dock?.id) { e.filled = true; e.isBusy = false } })
@@ -303,21 +317,23 @@ function createStartShip() {
                         default:
                             break;
                     }
-                }, 5000);
+                }, 1000);
                 // tweenC.start()
             })
 
         const coordsC = { x: 30, y: dock.id * 105 + ((dock.id - 1) * 15) }
-        const tweenC = new TWEEN.Tween(coordsC) // Create a new tween that modifies 'coords'.
-            .to({ x: 170, y: 295 }, 2000) // Move to (300, 200) in 1 second.
+        const tweenC = new TWEEN.Tween(coordsC)
+            .to({ x: 170, y: 295 }, 2000)
             .onUpdate(() => {
                 shipElement.x = coordsC.x, shipElement.y = coordsC.y
             })
         const coordsD = { x: 170, y: 295 }
-        const tweenD = new TWEEN.Tween(coordsD) // Create a new tween that modifies 'coords'.
-            .to({ x: 810, y: 295 }, 4000) // Move to (300, 200) in 1 second.
+        const tweenD = new TWEEN.Tween(coordsD)
+            .to({ x: 810, y: 295 }, 4000)
             .onUpdate(() => {
                 shipElement.x = coordsD.x, shipElement.y = coordsD.y
+            }).onComplete(() => {
+                shipElement.destroy()
             })
 
         tweenA.chain(tweenB)
@@ -326,9 +342,9 @@ function createStartShip() {
         tweenA.start()
     }
     else {
-        const coordsA = { x: 810, y: 300 } // Start at (0, 0)
-        const tweenA = new TWEEN.Tween(coordsA) // Create a new tween that modifies 'coords'.
-            .to({ x: (shipsState.filter(ship => ship.waiting).length * 80 - 80) + 220, y: currentShip.filled ? 220 : 350 }, 6000) // Move to (300, 200) in 1 second.
+        const coordsA = { x: 810, y: 300 }
+        const tweenA = new TWEEN.Tween(coordsA)
+            .to({ x: (shipsState.filter(ship => ship.waiting).length * 80 - 80) + 220, y: currentShip.filled ? 220 : 350 }, 5000)
             .easing(TWEEN.Easing.Quadratic.Out)
             .onUpdate(() => {
                 shipElement.x = coordsA.x, shipElement.y = coordsA.y
@@ -339,31 +355,34 @@ function createStartShip() {
                         if (!!freeDock) {
                             shipsState.forEach(e => { if (e.id === shipId) { e.waiting = false; e.numberInLine = 0 } })
                             onShipWithLine(shipElement, freeDock, filled, full_Red, full_Green)
-                            const shipsInLineNow = shipsState.filter(e => e.waiting === true && e.filled === !freeDock.filled)
+                            const shipsInLineNow = shipsState.filter(e => e.waiting === true && e.filled === !freeDock.filled && e.stoped === true)
                             for (let i = 0; i < shipsInLineNow.length; i++) {
-                                changePlaceInLine(shipsInLineNow[i].shipContainer, shipsInLineNow[i]);
+                                changePlaceInLine(shipsInLineNow[i].shipContainer, shipsInLineNow[i], 1000);
                             }
                         }
                     }
                 })
+                // if (shipsState.find(e => e.id === currentShip.id && e.numberInLine === 2) && shipsState.some(e => e.waiting === true && e.filled === filled && e.numberInLine !== 1)) {
+                //     changePlaceInLine(shipElement, currentShip, 0);
+                // }
+                shipsState.forEach(e => { if (e.id === shipId) e.stoped = true })
+                if ((currentShip.numberInLine - shipsState.filter(e => e.waiting === true && e.filled === filled).length) >= 1) { changePlaceInLine(shipElement, currentShip, 0); }
             })
         tweenA.start()
     }
+    // console.log(app.stage.children);
 }
 
-
+const throttleCreateShip = throttle(createStartShip, 8000)
 
 // Setup the animation loop.
 function animate(time: any) {
+    throttleCreateShip()
     requestAnimationFrame(animate)
     TWEEN.update(time)
 }
 requestAnimationFrame(animate)
 
-const throttleCreateShip = throttle(createStartShip, 8000)
-app.ticker.add((delta) => {
-    throttleCreateShip()
-})
 // setInterval(() => {
 //     const arr = shipsState.filter(e => e.waiting === true)
 //     if (arr.length > 0)
